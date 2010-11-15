@@ -3,17 +3,15 @@ require 'test_helper'
 class SetcomTest < Test::Unit::TestCase
   def setup
     @gateway = SetcomGateway.new(
-                 :login => 'login',
-                 :password => 'password'
+                 :company_id => 'login',
+                 :outlet => 'password'
                )
 
     @credit_card = credit_card
     @amount = 100
     
     @options = { 
-      :order_id => '1',
-      :billing_address => address,
-      :description => 'Store Purchase'
+      :reference => "test123"
     }
   end
   
@@ -21,11 +19,10 @@ class SetcomTest < Test::Unit::TestCase
     @gateway.expects(:ssl_post).returns(successful_purchase_response)
     
     assert response = @gateway.purchase(@amount, @credit_card, @options)
-    assert_instance_of 
     assert_success response
     
     # Replace with authorization number from the successful response
-    assert_equal '', response.authorization
+    assert_equal '10160810', response.authorization
     assert response.test?
   end
 
@@ -41,9 +38,11 @@ class SetcomTest < Test::Unit::TestCase
   
   # Place raw successful response from gateway here
   def successful_purchase_response
+    "Approved,123456,15/11/2010,15:44:07 PM,10160810,5EDD-A1A2,150.00"
   end
   
   # Place raw failed response from gateway here
-  def failed_purcahse_response
+  def failed_purchase_response
+    "Declined,123456,15/11/2010,15:44:07 PM,0,5EDD-A1A2,150.00"
   end
 end

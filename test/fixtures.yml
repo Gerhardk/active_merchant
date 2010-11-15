@@ -385,3 +385,7 @@ garanti:
   
 direc_pay:
   mid: 200904281000001
+  
+setcom:
+  company_id: testaccount
+  outlet: testaccount
