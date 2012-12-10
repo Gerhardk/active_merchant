@@ -185,6 +185,7 @@ module ActiveMerchant #:nodoc:
       end
 
       def parse(body)
+        puts body.inspect
         response = {}
 
         xml = REXML::Document.new(body)
