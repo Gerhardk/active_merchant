@@ -185,8 +185,8 @@ module ActiveMerchant #:nodoc:
       end
 
       def parse(body)
-        puts body.inspect
         response = {}
+        body.force_encoding("utf-8")
 
         xml = REXML::Document.new(body)
 
