@@ -2,15 +2,15 @@ require 'test_helper'
 
 # Some of the standard tests have been removed at SagePay test
 # server is pants and accepts anything and says Status=OK. (shift)
-# The tests for American Express will only pass if your account is 
+# The tests for American Express will only pass if your account is
 # American express enabled.
 class RemoteSagePayTest < Test::Unit::TestCase
   # set to true to run the tests in the simulated environment
   SagePayGateway.simulate = false
-  
+
   def setup
     @gateway = SagePayGateway.new(fixtures(:sage_pay))
-    
+
     @amex = CreditCard.new(
       :number => '374200000000004',
       :month => 12,
@@ -18,7 +18,7 @@ class RemoteSagePayTest < Test::Unit::TestCase
       :verification_value => 4887,
       :first_name => 'Tekin',
       :last_name => 'Suleyman',
-      :type => 'american_express'
+      :brand => 'american_express'
     )
 
     @maestro = CreditCard.new(
@@ -31,7 +31,7 @@ class RemoteSagePayTest < Test::Unit::TestCase
       :verification_value => 123,
       :first_name => 'Tekin',
       :last_name => 'Suleyman',
-      :type => 'maestro'
+      :brand => 'maestro'
     )
 
     @visa = CreditCard.new(
@@ -41,7 +41,7 @@ class RemoteSagePayTest < Test::Unit::TestCase
       :verification_value => 123,
       :first_name => 'Tekin',
       :last_name => 'Suleyman',
-      :type => 'visa'
+      :brand => 'visa'
     )
 
     @solo = CreditCard.new(
@@ -54,7 +54,7 @@ class RemoteSagePayTest < Test::Unit::TestCase
       :verification_value => 227,
       :first_name => 'Tekin',
       :last_name => 'Suleyman',
-      :type => 'solo'
+      :brand => 'solo'
     )
 
     @mastercard = CreditCard.new(
@@ -64,9 +64,9 @@ class RemoteSagePayTest < Test::Unit::TestCase
       :verification_value => 419,
       :first_name => 'Tekin',
       :last_name => 'Suleyman',
-      :type => 'master'
+      :brand => 'master'
     )
-    
+
     @electron = CreditCard.new(
       :number => '4917300000000008',
       :month => 12,
@@ -74,7 +74,7 @@ class RemoteSagePayTest < Test::Unit::TestCase
       :verification_value => 123,
       :first_name => 'Tekin',
       :last_name => 'Suleyman',
-      :type => 'electron'
+      :brand => 'electron'
     )
 
     @declined_card = CreditCard.new(
@@ -83,11 +83,11 @@ class RemoteSagePayTest < Test::Unit::TestCase
       :year => next_year,
       :first_name => 'Tekin',
       :last_name => 'Suleyman',
-      :type => 'visa'
+      :brand => 'visa'
     )
 
-    @options = { 
-      :billing_address => { 
+    @options = {
+      :billing_address => {
         :name => 'Tekin Suleyman',
         :address1 => 'Flat 10 Lapwing Court',
         :address2 => 'West Didsbury',
@@ -96,7 +96,7 @@ class RemoteSagePayTest < Test::Unit::TestCase
         :country => 'GB',
         :zip => 'M20 2PS'
       },
-      :shipping_address => { 
+      :shipping_address => {
         :name => 'Tekin Suleyman',
         :address1 => '120 Grosvenor St',
         :city => "Manchester",
@@ -110,61 +110,61 @@ class RemoteSagePayTest < Test::Unit::TestCase
       :email => 'tekin@tekin.co.uk',
       :phone => '0161 123 4567'
     }
- 
+
     @amount = 100
   end
 
   def test_successful_mastercard_purchase
     assert response = @gateway.purchase(@amount, @mastercard, @options)
     assert_success response
-    
+
     assert response.test?
     assert !response.authorization.blank?
   end
-  
+
   def test_unsuccessful_purchase
     assert response = @gateway.purchase(@amount, @declined_card, @options)
     assert_failure response
-    
+
     assert response.test?
   end
-  
+
   def test_successful_authorization_and_capture
     assert auth = @gateway.authorize(@amount, @mastercard, @options)
     assert_success auth
-    
+
     assert capture = @gateway.capture(@amount, auth.authorization)
     assert_success capture
   end
-  
+
   def test_successful_authorization_and_void
     assert auth = @gateway.authorize(@amount, @mastercard, @options)
-    assert_success auth    
-     
+    assert_success auth
+
     assert abort = @gateway.void(auth.authorization)
     assert_success abort
   end
-  
+
   def test_successful_purchase_and_void
     assert purchase = @gateway.purchase(@amount, @mastercard, @options)
-    assert_success purchase    
-     
+    assert_success purchase
+
     assert void = @gateway.void(purchase.authorization)
     assert_success void
   end
-  
+
   def test_successful_purchase_and_credit
     assert purchase = @gateway.purchase(@amount, @mastercard, @options)
-    assert_success purchase    
-    
+    assert_success purchase
+
     assert credit = @gateway.credit(@amount, purchase.authorization,
-      :description => 'Crediting trx', 
+      :description => 'Crediting trx',
       :order_id => generate_unique_id
     )
-    
+
     assert_success credit
   end
-  
+
   def test_successful_visa_purchase
     assert response = @gateway.purchase(@amount, @visa, @options)
     assert_success response
@@ -185,24 +185,30 @@ class RemoteSagePayTest < Test::Unit::TestCase
     assert response.test?
     assert !response.authorization.blank?
   end
-  
+
   def test_successful_amex_purchase
     assert response = @gateway.purchase(@amount, @amex, @options)
     assert_success response
     assert response.test?
     assert !response.authorization.blank?
   end
-  
+
   def test_successful_electron_purchase
     assert response = @gateway.purchase(@amount, @electron, @options)
     assert_success response
     assert response.test?
     assert !response.authorization.blank?
   end
-  
+
+  def test_successful_purchase_with_long_description
+    description = "SagePay transactions fail if the description is more than 100 characters. Therefore, we truncate it to 100 characters."
+    assert response = @gateway.purchase(@amount, @visa, @options.merge(description: description))
+    assert_success response
+  end
+
   def test_invalid_login
-    message = SagePayGateway.simulate ? 'VSP Simulator cannot find your vendor name.  Ensure you have have supplied a Vendor field with your VSP Vendor name assigned to it.' : '3034 : The Vendor or VendorName value is required.' 
-    
+    message = SagePayGateway.simulate ? 'VSP Simulator cannot find your vendor name.  Ensure you have have supplied a Vendor field with your VSP Vendor name assigned to it.' : '3034 : The Vendor or VendorName value is required.'
+
     gateway = SagePayGateway.new(
         :login => ''
     )
@@ -210,7 +216,7 @@ class RemoteSagePayTest < Test::Unit::TestCase
     assert_equal message, response.message
     assert_failure response
   end
-  
+
   private
 
   def next_year
