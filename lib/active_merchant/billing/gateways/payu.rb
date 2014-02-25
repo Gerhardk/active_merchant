@@ -1,8 +1,8 @@
 module ActiveMerchant #:nodoc:
   module Billing #:nodoc:
     class PayuGateway < Gateway
-      # LIVE_URL = 'https://secure.SafeShop.co.za/s2s/SafePay.asp'
-      LIVE_URL = 'http://staging.safeshop.co.za/s2s/SafePay.asp'
+      LIVE_URL = 'https://secure.SafeShop.co.za/s2s/SafePay.asp'
+      TEST_URL = 'https://staging.safeshop.co.za/s2s/SafePay.asp'
 
       # The countries the gateway supports merchants from as 2 digit ISO country codes
       self.supported_countries = ['ZA']
@@ -199,7 +199,15 @@ module ActiveMerchant #:nodoc:
       end
 
       def commit(request)
-        response = parse( ssl_post(LIVE_URL, request) )
+        headers = Builder::XmlMarkup.new :indent => 2
+        headers.tag! "wsse:Security" do
+          headers.tag! "wsse:UsernameToken" do
+            headers.tag! "wsse:Username", "Staging Integration Store 3" #@options[:username]
+            headers.tag! "wsse:Password", "WSAUFbw6" #@options[:password]
+          end
+        end
+
+        response = parse( ssl_post(TEST_URL, request, headers) )
 
         success = response[:transactionresult] == "Successful" ? true : false
         Response.new(success, message_from(response), response, :test => test?, :authorization => response[:safepayrefnr])
