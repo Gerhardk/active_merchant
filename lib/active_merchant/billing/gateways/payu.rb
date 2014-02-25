@@ -2,7 +2,7 @@ module ActiveMerchant #:nodoc:
   module Billing #:nodoc:
     class PayuGateway < Gateway
       # LIVE_URL = 'https://secure.SafeShop.co.za/s2s/SafePay.asp'
-      LIVE_URL = 'staging.safeshop.co.za/s2s/SafePay.asp'
+      LIVE_URL = 'http://staging.safeshop.co.za/s2s/SafePay.asp'
 
       # The countries the gateway supports merchants from as 2 digit ISO country codes
       self.supported_countries = ['ZA']
